@@ -24,7 +24,7 @@ export default function ProfilePage() {
       setUser(updated);
       if (authUser && token) login(token, { ...authUser, name: updated.name, email: updated.email });
       setEditing(false);
-      setMsg('Профиль обновлён!');
+      setMsg('Профиль обновлён');
       setTimeout(() => setMsg(''), 3000);
     } catch (err) { setMsg(err instanceof Error ? err.message : 'Ошибка'); }
     finally { setSaving(false); }
@@ -32,50 +32,50 @@ export default function ProfilePage() {
 
   if (!user) return <div style={{ textAlign: 'center', padding: 40, color: 'var(--text-muted)' }}>Загрузка...</div>;
 
-  const roleLabel = user.role === 'ORGANIZER' ? '🎯 Организатор' : '🎮 Игрок';
-
   return (
-    <div style={{ maxWidth: 560, margin: '0 auto' }}>
-      <h1 style={{ fontSize: 24, marginBottom: 24 }}>👤 Профиль</h1>
+    <div style={{ maxWidth: 480, margin: '0 auto' }}>
+      <h1 style={{ fontSize: 22, fontWeight: 700, marginBottom: 24 }}>Профиль</h1>
 
       {msg && (
         <div style={{
-          background: 'rgba(16,185,129,0.1)', border: '1px solid var(--success)',
-          borderRadius: 8, padding: '10px 14px', marginBottom: 16, color: '#6ee7b7',
+          background: 'rgba(22,163,74,0.1)', border: '1px solid rgba(22,163,74,0.3)',
+          borderRadius: 7, padding: '9px 12px', marginBottom: 16, color: '#86efac', fontSize: 13,
         }}>
           {msg}
         </div>
       )}
 
-      <div style={{ background: 'var(--surface)', borderRadius: 'var(--radius)', padding: 32, border: '1px solid var(--border)' }}>
-        <div style={{ textAlign: 'center', marginBottom: 28 }}>
+      <div style={{ background: 'var(--surface)', borderRadius: 'var(--radius)', padding: 28, border: '1px solid var(--border)' }}>
+        <div style={{ textAlign: 'center', marginBottom: 24 }}>
           <div style={{
-            width: 80, height: 80, borderRadius: '50%',
+            width: 64, height: 64, borderRadius: '50%',
             background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 32, margin: '0 auto 12px',
+            fontSize: 24, fontWeight: 700, margin: '0 auto 10px',
           }}>
             {user.name[0].toUpperCase()}
           </div>
-          <div style={{ color: 'var(--text-muted)', fontSize: 13 }}>{roleLabel}</div>
+          <div style={{ color: 'var(--text-muted)', fontSize: 13 }}>
+            {user.role === 'ORGANIZER' ? 'Организатор' : 'Игрок'}
+          </div>
         </div>
 
         {!editing ? (
           <div>
             <Row label="Имя" value={user.name} />
             <Row label="Email" value={user.email} />
-            <Row label="Роль" value={roleLabel} />
-            <Row label="Дата регистрации" value={new Date(user.createdAt).toLocaleDateString('ru-RU')} />
+            <Row label="Роль" value={user.role === 'ORGANIZER' ? 'Организатор' : 'Игрок'} />
+            <Row label="Зарегистрирован" value={new Date(user.createdAt).toLocaleDateString('ru-RU')} />
             <button onClick={() => setEditing(true)} style={{
-              width: '100%', padding: 12, marginTop: 16,
+              width: '100%', padding: 11, marginTop: 18,
               background: 'var(--primary)', border: 'none', borderRadius: 8,
-              color: '#fff', fontWeight: 600,
+              color: '#fff', fontWeight: 600, fontSize: 14,
             }}>
-              ✏️ Редактировать
+              Редактировать
             </button>
           </div>
         ) : (
           <form onSubmit={handleSave}>
-            <div style={{ marginBottom: 16 }}>
+            <div style={{ marginBottom: 14 }}>
               <label style={{ fontSize: 13, color: 'var(--text-muted)', display: 'block', marginBottom: 6 }}>Имя</label>
               <input value={name} onChange={e => setName(e.target.value)} required />
             </div>
@@ -85,13 +85,13 @@ export default function ProfilePage() {
             </div>
             <div style={{ display: 'flex', gap: 10 }}>
               <button type="submit" disabled={saving} style={{
-                flex: 1, padding: 12, background: 'var(--primary)', border: 'none',
+                flex: 1, padding: 11, background: 'var(--primary)', border: 'none',
                 borderRadius: 8, color: '#fff', fontWeight: 600,
               }}>
-                {saving ? 'Сохранение...' : '💾 Сохранить'}
+                {saving ? 'Сохранение...' : 'Сохранить'}
               </button>
               <button type="button" onClick={() => setEditing(false)} style={{
-                flex: 1, padding: 12, background: 'var(--surface2)', border: 'none',
+                flex: 1, padding: 11, background: 'var(--surface2)', border: 'none',
                 borderRadius: 8, color: 'var(--text)', fontWeight: 600,
               }}>
                 Отмена
@@ -106,9 +106,9 @@ export default function ProfilePage() {
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px solid var(--border)' }}>
-      <span style={{ color: 'var(--text-muted)', fontSize: 14 }}>{label}</span>
-      <span style={{ fontSize: 14, fontWeight: 500 }}>{value}</span>
+    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid var(--border)' }}>
+      <span style={{ color: 'var(--text-muted)', fontSize: 13 }}>{label}</span>
+      <span style={{ fontSize: 13, fontWeight: 500 }}>{value}</span>
     </div>
   );
 }

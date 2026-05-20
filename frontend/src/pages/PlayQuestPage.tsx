@@ -44,17 +44,13 @@ export default function PlayQuestPage() {
   const [submitting, setSubmitting] = useState(false);
   const [showHint, setShowHint] = useState(false);
   const [elapsed, setElapsed] = useState('0:00');
-  const [wsEvents, setWsEvents] = useState<string[]>([]);
+  const [wsLog, setWsLog] = useState<string[]>([]);
 
   useEffect(() => {
     if (!sessionId) return;
-    api.getSession(sessionId).then(s => {
-      setSession(s);
-      setLoading(false);
-    });
+    api.getSession(sessionId).then(s => { setSession(s); setLoading(false); });
   }, [sessionId]);
 
-  // Timer
   useEffect(() => {
     if (!session) return;
     const interval = setInterval(() => setElapsed(formatElapsed(session.startedAt)), 1000);
@@ -63,14 +59,11 @@ export default function PlayQuestPage() {
 
   const currentTask: Task | undefined = session?.quest.tasks[session.currentTaskIndex];
 
-  const onWsEvent = useCallback((type: string, payload: Record<string, unknown>) => {
-    if (type === 'player_joined' || type === 'player_left') {
-      const msg = type === 'player_joined' ? '👤 Другой игрок присоединился' : '👤 Игрок вышел';
-      setWsEvents(prev => [...prev.slice(-2), msg]);
-    }
-    if (type === 'progress_updated') {
-      // Refresh session when another player progresses (team mode)
-      if (sessionId) api.getSession(sessionId).then(setSession);
+  const onWsEvent = useCallback((type: string) => {
+    if (type === 'player_joined') setWsLog(p => [...p.slice(-2), 'Другой игрок подключился']);
+    if (type === 'player_left') setWsLog(p => [...p.slice(-2), 'Игрок покинул квест']);
+    if (type === 'progress_updated' && sessionId) {
+      api.getSession(sessionId).then(setSession);
     }
   }, [sessionId]);
 
@@ -79,9 +72,9 @@ export default function PlayQuestPage() {
     sessionId: sessionId ?? '',
     token,
     onEvent: {
-      player_joined: (_p) => onWsEvent('player_joined', _p),
-      player_left: (_p) => onWsEvent('player_left', _p),
-      progress_updated: (_p) => onWsEvent('progress_updated', _p),
+      player_joined: () => onWsEvent('player_joined'),
+      player_left: () => onWsEvent('player_left'),
+      progress_updated: () => onWsEvent('progress_updated'),
     },
   });
 
@@ -93,17 +86,16 @@ export default function PlayQuestPage() {
     try {
       const result = await api.submitAnswer(sessionId, currentTask.id, answer);
       if (result.completed) {
-        setFeedback({ correct: true, message: '🎉 Поздравляем! Квест пройден!' });
+        setFeedback({ correct: true, message: 'Квест завершён! Отличная работа.' });
         setTimeout(() => navigate(`/quests/${session.questId}`), 3000);
       } else if (result.isCorrect) {
-        setFeedback({ correct: true, message: '✅ Верно! Переходи к следующей точке.' });
+        setFeedback({ correct: true, message: 'Верно! Переходите к следующей точке.' });
         setAnswer('');
         setShowHint(false);
-        // Refresh session to get updated currentTaskIndex
         const updated = await api.getSession(sessionId);
         setSession(updated);
       } else {
-        setFeedback({ correct: false, message: '❌ Неверно. Попробуй ещё раз!' });
+        setFeedback({ correct: false, message: 'Неверный ответ. Попробуйте ещё раз.' });
       }
     } catch (err) {
       setFeedback({ correct: false, message: err instanceof Error ? err.message : 'Ошибка' });
@@ -115,8 +107,7 @@ export default function PlayQuestPage() {
   if (session.status === 'COMPLETED') {
     return (
       <div style={{ textAlign: 'center', padding: 80 }}>
-        <div style={{ fontSize: 72, marginBottom: 20 }}>🏆</div>
-        <h1 style={{ marginBottom: 12 }}>Квест завершён!</h1>
+        <h1 style={{ marginBottom: 12 }}>Квест завершён</h1>
         <p style={{ color: 'var(--text-muted)' }}>Отличная работа!</p>
       </div>
     );
@@ -129,12 +120,11 @@ export default function PlayQuestPage() {
     : [55.751, 37.617];
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: 20, height: 'calc(100vh - 140px)' }}>
-      {/* Map */}
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 360px', gap: 16, height: 'calc(100vh - 120px)' }}>
       <div style={{ borderRadius: 'var(--radius)', overflow: 'hidden', border: '1px solid var(--border)' }}>
         <MapContainer center={mapCenter} zoom={15} style={{ height: '100%', width: '100%' }}>
           <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-          <Polyline positions={routePoints} color="#6366f1" weight={2} dashArray="6,8" />
+          <Polyline positions={routePoints} color="#3b82f6" weight={2} dashArray="6,8" />
           {tasks.map((task, i) => {
             const done = i < session.currentTaskIndex;
             const active = i === session.currentTaskIndex;
@@ -142,13 +132,11 @@ export default function PlayQuestPage() {
               <Marker
                 key={task.id}
                 position={[task.latitude, task.longitude]}
-                icon={active ? activeIcon : done ? doneIcon : L.Icon.Default.prototype}
-                opacity={done ? 0.6 : 1}
+                icon={active ? activeIcon : done ? doneIcon : L.Icon.Default.prototype as L.Icon}
+                opacity={done ? 0.5 : 1}
               >
                 <Popup>
-                  <b>{done ? '✅' : active ? '📍' : '🔒'} Точка {i + 1}</b>
-                  {done && <p style={{ fontSize: 12 }}>Выполнено</p>}
-                  {active && <p style={{ fontSize: 12 }}>Текущее задание</p>}
+                  <b>{done ? 'Выполнено' : active ? 'Текущее задание' : 'Закрыто'} — Точка {i + 1}</b>
                 </Popup>
               </Marker>
             );
@@ -156,16 +144,14 @@ export default function PlayQuestPage() {
         </MapContainer>
       </div>
 
-      {/* Right panel */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12, overflow: 'auto' }}>
-        {/* Progress header */}
-        <div style={{ background: 'var(--surface)', borderRadius: 'var(--radius)', padding: 20, border: '1px solid var(--border)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
-            <h3 style={{ fontSize: 15 }}>{session.quest.title}</h3>
-            <span style={{ color: 'var(--secondary)', fontFamily: 'monospace', fontWeight: 700 }}>⏱ {elapsed}</span>
+        {/* Progress */}
+        <div style={{ background: 'var(--surface)', borderRadius: 'var(--radius)', padding: 16, border: '1px solid var(--border)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+            <span style={{ fontSize: 14, fontWeight: 600 }}>{session.quest.title}</span>
+            <span style={{ color: 'var(--text-muted)', fontFamily: 'monospace', fontSize: 13 }}>{elapsed}</span>
           </div>
-          {/* Progress bar */}
-          <div style={{ background: 'var(--surface2)', borderRadius: 4, height: 8, overflow: 'hidden' }}>
+          <div style={{ background: 'var(--surface2)', borderRadius: 4, height: 6, overflow: 'hidden' }}>
             <div style={{
               background: 'var(--primary)',
               height: '100%',
@@ -179,20 +165,20 @@ export default function PlayQuestPage() {
           </p>
         </div>
 
-        {/* Current task */}
+        {/* Task */}
         {currentTask && (
-          <div style={{ background: 'var(--surface)', borderRadius: 'var(--radius)', padding: 24, border: '1px solid var(--border)', flex: 1 }}>
-            <div style={{ fontSize: 12, color: 'var(--primary)', fontWeight: 700, marginBottom: 12, textTransform: 'uppercase', letterSpacing: 1 }}>
-              📍 Задание {session.currentTaskIndex + 1}
+          <div style={{ background: 'var(--surface)', borderRadius: 'var(--radius)', padding: 20, border: '1px solid var(--border)', flex: 1 }}>
+            <div style={{ fontSize: 11, color: 'var(--primary-light)', fontWeight: 600, marginBottom: 10, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+              Задание {session.currentTaskIndex + 1}
             </div>
-            <p style={{ fontSize: 16, lineHeight: 1.6, marginBottom: 20 }}>{currentTask.description}</p>
+            <p style={{ fontSize: 15, lineHeight: 1.6, marginBottom: 18 }}>{currentTask.description}</p>
 
             {feedback && (
               <div style={{
-                background: feedback.correct ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)',
-                border: `1px solid ${feedback.correct ? 'var(--success)' : 'var(--danger)'}`,
-                borderRadius: 8, padding: '10px 14px', fontSize: 14, marginBottom: 16,
-                color: feedback.correct ? '#6ee7b7' : '#fca5a5',
+                background: feedback.correct ? 'rgba(22,163,74,0.1)' : 'rgba(220,38,38,0.08)',
+                border: `1px solid ${feedback.correct ? 'rgba(22,163,74,0.4)' : 'rgba(220,38,38,0.3)'}`,
+                borderRadius: 7, padding: '9px 12px', fontSize: 13, marginBottom: 14,
+                color: feedback.correct ? '#86efac' : '#fca5a5',
               }}>
                 {feedback.message}
               </div>
@@ -202,41 +188,41 @@ export default function PlayQuestPage() {
               <input
                 value={answer}
                 onChange={e => setAnswer(e.target.value)}
-                placeholder="Введи ответ..."
-                style={{ marginBottom: 12 }}
+                placeholder="Введите ответ..."
+                style={{ marginBottom: 10 }}
                 autoFocus
               />
               <button
                 type="submit"
                 disabled={submitting || !answer.trim()}
                 style={{
-                  width: '100%', padding: 12,
+                  width: '100%', padding: 11,
                   background: 'var(--primary)', border: 'none',
-                  borderRadius: 8, color: '#fff', fontWeight: 600, fontSize: 15,
-                  opacity: submitting || !answer.trim() ? 0.6 : 1,
+                  borderRadius: 8, color: '#fff', fontWeight: 600, fontSize: 14,
+                  opacity: submitting || !answer.trim() ? 0.5 : 1,
                 }}
               >
-                {submitting ? 'Проверка...' : 'Отправить ответ'}
+                {submitting ? 'Проверка...' : 'Отправить'}
               </button>
             </form>
 
             {currentTask.hint && (
-              <div style={{ marginTop: 16 }}>
+              <div style={{ marginTop: 14 }}>
                 <button
                   onClick={() => setShowHint(!showHint)}
                   style={{
                     background: 'none', border: '1px solid var(--border)',
-                    borderRadius: 8, padding: '8px 14px',
+                    borderRadius: 7, padding: '7px 12px',
                     color: 'var(--text-muted)', fontSize: 13, width: '100%',
                   }}
                 >
-                  💡 {showHint ? 'Скрыть подсказку' : 'Показать подсказку'}
+                  {showHint ? 'Скрыть подсказку' : 'Показать подсказку'}
                 </button>
                 {showHint && (
                   <div style={{
-                    marginTop: 8, background: 'rgba(245,158,11,0.1)',
-                    border: '1px solid rgba(245,158,11,0.3)',
-                    borderRadius: 8, padding: '10px 14px', fontSize: 13, color: '#fcd34d',
+                    marginTop: 8, background: 'rgba(217,119,6,0.08)',
+                    border: '1px solid rgba(217,119,6,0.25)',
+                    borderRadius: 7, padding: '9px 12px', fontSize: 13, color: '#fcd34d',
                   }}>
                     {currentTask.hint}
                   </div>
@@ -246,10 +232,9 @@ export default function PlayQuestPage() {
           </div>
         )}
 
-        {/* WS events */}
-        {wsEvents.length > 0 && (
-          <div style={{ background: 'var(--surface)', borderRadius: 8, padding: '10px 16px', border: '1px solid var(--border)' }}>
-            {wsEvents.map((e, i) => (
+        {wsLog.length > 0 && (
+          <div style={{ background: 'var(--surface)', borderRadius: 8, padding: '8px 14px', border: '1px solid var(--border)' }}>
+            {wsLog.map((e, i) => (
               <div key={i} style={{ fontSize: 12, color: 'var(--text-muted)' }}>{e}</div>
             ))}
           </div>

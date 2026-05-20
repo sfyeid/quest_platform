@@ -3,24 +3,23 @@ import { useNavigate, Link } from 'react-router-dom';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
-const formStyle: React.CSSProperties = {
-  maxWidth: 420,
+export const formWrap: React.CSSProperties = {
+  maxWidth: 400,
   margin: '60px auto',
   background: 'var(--surface)',
   borderRadius: 'var(--radius)',
   padding: 32,
-  boxShadow: 'var(--shadow)',
+  border: '1px solid var(--border)',
 };
-
-const inputWrap: React.CSSProperties = { display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 16 };
-const label: React.CSSProperties = { fontSize: 13, color: 'var(--text-muted)', fontWeight: 500 };
-const btnPrimary: React.CSSProperties = {
-  width: '100%', padding: '12px', background: 'var(--primary)', border: 'none',
-  borderRadius: 8, color: '#fff', fontWeight: 600, fontSize: 15, marginTop: 8,
+export const fieldWrap: React.CSSProperties = { display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 14 };
+export const labelStyle: React.CSSProperties = { fontSize: 13, color: 'var(--text-muted)', fontWeight: 500 };
+export const submitBtn: React.CSSProperties = {
+  width: '100%', padding: '11px', background: 'var(--primary)', border: 'none',
+  borderRadius: 8, color: '#fff', fontWeight: 600, fontSize: 14, marginTop: 6,
 };
-const errStyle: React.CSSProperties = {
-  background: 'rgba(239,68,68,0.1)', border: '1px solid var(--danger)',
-  color: '#fca5a5', borderRadius: 8, padding: '10px 14px', fontSize: 13, marginBottom: 12,
+export const errorBox: React.CSSProperties = {
+  background: 'rgba(220,38,38,0.08)', border: '1px solid rgba(220,38,38,0.3)',
+  color: '#fca5a5', borderRadius: 7, padding: '9px 12px', fontSize: 13, marginBottom: 12,
 };
 
 export default function LoginPage() {
@@ -44,30 +43,31 @@ export default function LoginPage() {
   };
 
   return (
-    <div style={formStyle}>
-      <h1 style={{ textAlign: 'center', marginBottom: 24, fontSize: 24 }}>🗺️ Вход</h1>
-      {error && <div style={errStyle}>{error}</div>}
+    <div style={formWrap}>
+      <h1 style={{ fontSize: 22, fontWeight: 700, marginBottom: 6 }}>Вход</h1>
+      <p style={{ color: 'var(--text-muted)', fontSize: 13, marginBottom: 22 }}>
+        Войдите, чтобы проходить квесты
+      </p>
+      {error && <div style={errorBox}>{error}</div>}
       <form onSubmit={handleSubmit}>
-        <div style={inputWrap}>
-          <label style={label}>Email</label>
+        <div style={fieldWrap}>
+          <label style={labelStyle}>Email</label>
           <input type="email" value={email} onChange={e => setEmail(e.target.value)} required placeholder="you@example.com" />
         </div>
-        <div style={inputWrap}>
-          <label style={label}>Пароль</label>
+        <div style={fieldWrap}>
+          <label style={labelStyle}>Пароль</label>
           <input type="password" value={password} onChange={e => setPassword(e.target.value)} required placeholder="••••••" />
         </div>
-        <button type="submit" style={btnPrimary} disabled={loading}>
+        <button type="submit" style={submitBtn} disabled={loading}>
           {loading ? 'Вход...' : 'Войти'}
         </button>
       </form>
-      <p style={{ textAlign: 'center', marginTop: 20, color: 'var(--text-muted)', fontSize: 14 }}>
-        Нет аккаунта? <Link to="/register" style={{ color: 'var(--primary)' }}>Регистрация</Link>
+      <p style={{ textAlign: 'center', marginTop: 18, color: 'var(--text-muted)', fontSize: 13 }}>
+        Нет аккаунта? <Link to="/register" style={{ color: 'var(--primary-light)' }}>Зарегистрироваться</Link>
       </p>
-      <p style={{ textAlign: 'center', marginTop: 8, color: 'var(--text-muted)', fontSize: 12 }}>
-        Тест: organizer@quest.ru / password123
-      </p>
+      <div style={{ marginTop: 16, padding: '10px 12px', background: 'var(--surface2)', borderRadius: 7, fontSize: 12, color: 'var(--text-muted)' }}>
+        Демо: organizer@quest.ru / password123
+      </div>
     </div>
   );
 }
-
-export { formStyle, inputWrap, label, btnPrimary, errStyle };

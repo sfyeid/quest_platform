@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
-import { formStyle, inputWrap, label, btnPrimary, errStyle } from './LoginPage';
+import { formWrap, fieldWrap, labelStyle, submitBtn, errorBox } from './LoginPage';
 
 export default function RegisterPage() {
   const [name, setName] = useState('');
@@ -27,35 +27,38 @@ export default function RegisterPage() {
   };
 
   return (
-    <div style={formStyle}>
-      <h1 style={{ textAlign: 'center', marginBottom: 24, fontSize: 24 }}>📝 Регистрация</h1>
-      {error && <div style={errStyle}>{error}</div>}
+    <div style={formWrap}>
+      <h1 style={{ fontSize: 22, fontWeight: 700, marginBottom: 6 }}>Регистрация</h1>
+      <p style={{ color: 'var(--text-muted)', fontSize: 13, marginBottom: 22 }}>
+        Создайте аккаунт для участия в квестах
+      </p>
+      {error && <div style={errorBox}>{error}</div>}
       <form onSubmit={handleSubmit}>
-        <div style={inputWrap}>
-          <label style={label}>Имя</label>
+        <div style={fieldWrap}>
+          <label style={labelStyle}>Имя</label>
           <input value={name} onChange={e => setName(e.target.value)} required placeholder="Иван Иванов" />
         </div>
-        <div style={inputWrap}>
-          <label style={label}>Email</label>
+        <div style={fieldWrap}>
+          <label style={labelStyle}>Email</label>
           <input type="email" value={email} onChange={e => setEmail(e.target.value)} required placeholder="you@example.com" />
         </div>
-        <div style={inputWrap}>
-          <label style={label}>Пароль (минимум 6 символов)</label>
-          <input type="password" value={password} onChange={e => setPassword(e.target.value)} required minLength={6} />
+        <div style={fieldWrap}>
+          <label style={labelStyle}>Пароль</label>
+          <input type="password" value={password} onChange={e => setPassword(e.target.value)} required minLength={6} placeholder="Минимум 6 символов" />
         </div>
-        <div style={inputWrap}>
-          <label style={label}>Роль</label>
+        <div style={fieldWrap}>
+          <label style={labelStyle}>Роль</label>
           <select value={role} onChange={e => setRole(e.target.value as 'PLAYER' | 'ORGANIZER')}>
-            <option value="PLAYER">🎮 Игрок — проходить квесты</option>
-            <option value="ORGANIZER">🎯 Организатор — создавать квесты</option>
+            <option value="PLAYER">Игрок — проходить квесты</option>
+            <option value="ORGANIZER">Организатор — создавать квесты</option>
           </select>
         </div>
-        <button type="submit" style={btnPrimary} disabled={loading}>
+        <button type="submit" style={submitBtn} disabled={loading}>
           {loading ? 'Создание...' : 'Создать аккаунт'}
         </button>
       </form>
-      <p style={{ textAlign: 'center', marginTop: 20, color: 'var(--text-muted)', fontSize: 14 }}>
-        Уже есть аккаунт? <Link to="/login" style={{ color: 'var(--primary)' }}>Войти</Link>
+      <p style={{ textAlign: 'center', marginTop: 18, color: 'var(--text-muted)', fontSize: 13 }}>
+        Уже есть аккаунт? <Link to="/login" style={{ color: 'var(--primary-light)' }}>Войти</Link>
       </p>
     </div>
   );

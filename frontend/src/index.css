@@ -1,23 +1,24 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --primary: #6366f1;
-  --primary-dark: #4f46e5;
-  --secondary: #f59e0b;
-  --success: #10b981;
-  --danger: #ef4444;
+  --primary: #2563eb;
+  --primary-dark: #1d4ed8;
+  --primary-light: #3b82f6;
+  --secondary: #64748b;
+  --success: #16a34a;
+  --danger: #dc2626;
   --bg: #0f172a;
   --surface: #1e293b;
-  --surface2: #334155;
-  --text: #f1f5f9;
+  --surface2: #293548;
+  --text: #e2e8f0;
   --text-muted: #94a3b8;
-  --border: #334155;
-  --radius: 12px;
-  --shadow: 0 4px 24px rgba(0,0,0,0.3);
+  --border: #2d3f55;
+  --radius: 10px;
+  --shadow: 0 2px 12px rgba(0,0,0,0.25);
 }
 
 body {
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
   background: var(--bg);
   color: var(--text);
   min-height: 100vh;
@@ -38,12 +39,10 @@ input, textarea, select {
   outline: none;
   transition: border-color 0.2s;
 }
-input:focus, textarea:focus, select:focus { border-color: var(--primary); }
+input:focus, textarea:focus, select:focus { border-color: var(--primary-light); }
 
-/* Leaflet fix for dark theme */
 .leaflet-container { border-radius: var(--radius); }
 
-/* Scrollbar */
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: var(--surface); }
 ::-webkit-scrollbar-thumb { background: var(--surface2); border-radius: 3px; }

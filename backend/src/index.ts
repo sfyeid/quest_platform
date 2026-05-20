@@ -14,35 +14,45 @@ dotenv.config();
 const app = express();
 const server = http.createServer(app);
 
-// Middleware
 app.use(cors({
   origin: process.env.FRONTEND_URL || 'http://localhost:5173',
   credentials: true,
 }));
 app.use(express.json());
 
-// Health check
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// Routes
 app.use('/api/auth', authRouter);
 app.use('/api/quests', questRouter);
 app.use('/api/sessions', sessionRouter);
 app.use('/api/users', userRouter);
 
-// Error handler
 app.use(errorHandler);
 
-// WebSocket
 const wsManager = new WebSocketManager(server);
 export { wsManager };
 
+async function runSeedIfEmpty() {
+  try {
+    const { prisma } = await import('./config/prisma');
+    const count = await prisma.user.count();
+    if (count === 0) {
+      console.log('Database is empty, running seed...');
+      const { main } = await import('./seed');
+      await main();
+    }
+  } catch (err) {
+    console.error('Seed check failed:', err);
+  }
+}
+
 const PORT = process.env.PORT || 4000;
-server.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📡 WebSocket ready`);
+server.listen(PORT, async () => {
+  console.log(`Server running on port ${PORT}`);
+  console.log('WebSocket ready');
+  await runSeedIfEmpty();
 });
 
 export default app;
