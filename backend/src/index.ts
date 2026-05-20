@@ -8,20 +8,35 @@ import { sessionRouter } from './routes/session.routes';
 import { userRouter } from './routes/user.routes';
 import { WebSocketManager } from './websocket/ws.manager';
 import { errorHandler } from './middleware/error.middleware';
+import { prisma } from './config/prisma';
+import { seedDatabase } from './seed';
 
 dotenv.config();
 
 const app = express();
 const server = http.createServer(app);
 
-app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
-  credentials: true,
-}));
+// Open CORS for all origins (academic project)
+app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
 
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// Manual seed trigger — protected by secret token
+app.post('/api/admin/seed', async (req, res) => {
+  const secret = req.headers['x-seed-secret'];
+  if (secret !== (process.env.SEED_SECRET || 'seed_quest_2026')) {
+    res.status(403).json({ error: 'Forbidden' });
+    return;
+  }
+  try {
+    await seedDatabase();
+    res.json({ ok: true, message: 'Seed completed' });
+  } catch (err) {
+    res.status(500).json({ error: String(err) });
+  }
 });
 
 app.use('/api/auth', authRouter);
@@ -34,25 +49,24 @@ app.use(errorHandler);
 const wsManager = new WebSocketManager(server);
 export { wsManager };
 
-async function runSeedIfEmpty() {
-  try {
-    const { prisma } = await import('./config/prisma');
-    const count = await prisma.user.count();
-    if (count === 0) {
-      console.log('Database is empty, running seed...');
-      const { main } = await import('./seed');
-      await main();
-    }
-  } catch (err) {
-    console.error('Seed check failed:', err);
-  }
-}
-
 const PORT = process.env.PORT || 4000;
 server.listen(PORT, async () => {
   console.log(`Server running on port ${PORT}`);
   console.log('WebSocket ready');
-  await runSeedIfEmpty();
+
+  // Auto-seed if DB is empty
+  try {
+    const count = await prisma.user.count();
+    console.log(`DB user count: ${count}`);
+    if (count === 0) {
+      console.log('DB empty — running seed...');
+      await seedDatabase();
+    } else {
+      console.log('DB has data — skipping seed.');
+    }
+  } catch (err) {
+    console.error('Auto-seed error:', err);
+  }
 });
 
 export default app;
