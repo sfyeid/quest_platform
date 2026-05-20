@@ -79,9 +79,9 @@ export default function PlayQuestPage() {
     sessionId: sessionId ?? '',
     token,
     onEvent: {
-      player_joined: (p) => onWsEvent('player_joined', p),
-      player_left: (p) => onWsEvent('player_left', p),
-      progress_updated: (p) => onWsEvent('progress_updated', p),
+      player_joined: (_p) => onWsEvent('player_joined', _p),
+      player_left: (_p) => onWsEvent('player_left', _p),
+      progress_updated: (_p) => onWsEvent('progress_updated', _p),
     },
   });
 

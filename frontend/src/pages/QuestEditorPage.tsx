@@ -26,7 +26,7 @@ const labelStyle: React.CSSProperties = { fontSize: 13, color: 'var(--text-muted
 export default function QuestEditorPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  useAuth();
   const isEdit = Boolean(id);
 
   const [title, setTitle] = useState('');
@@ -36,7 +36,6 @@ export default function QuestEditorPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [saving, setSaving] = useState(false);
   const [questId, setQuestId] = useState<string | null>(id ?? null);
-  const [activeTaskEdit, setActiveTaskEdit] = useState<number | null>(null);
   const [pendingPoint, setPendingPoint] = useState<{ lat: number; lng: number } | null>(null);
   const [taskForm, setTaskForm] = useState({ description: '', answer: '', hint: '', taskType: 'TEXT' as Task['taskType'] });
 
@@ -79,7 +78,6 @@ export default function QuestEditorPage() {
   const handleMapClick = (lat: number, lng: number) => {
     setPendingPoint({ lat, lng });
     setTaskForm({ description: '', answer: '', hint: '', taskType: 'TEXT' });
-    setActiveTaskEdit(null);
   };
 
   const handleAddTask = async () => {
@@ -222,7 +220,7 @@ export default function QuestEditorPage() {
           <MapContainer center={center} zoom={13} style={{ height: '100%', width: '100%' }}>
             <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
             <MapClickHandler onMapClick={handleMapClick} />
-            {tasks.map((task, i) => (
+            {tasks.map((task) => (
               <Marker key={task.id} position={[task.latitude, task.longitude]}>
               </Marker>
             ))}
