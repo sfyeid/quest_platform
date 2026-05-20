@@ -1,0 +1,122 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [postgis]
+}
+
+enum UserRole {
+  ORGANIZER
+  PLAYER
+}
+
+enum QuestStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum QuestDifficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
+enum SessionStatus {
+  ACTIVE
+  COMPLETED
+  ABANDONED
+}
+
+enum TaskType {
+  TEXT
+  CHOICE
+  NUMBER
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  role         UserRole @default(PLAYER)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  createdQuests  Quest[]
+  questSessions  QuestSession[]
+
+  @@map("users")
+}
+
+model Quest {
+  id          String          @id @default(uuid())
+  title       String
+  description String
+  category    String
+  difficulty  QuestDifficulty @default(MEDIUM)
+  status      QuestStatus     @default(DRAFT)
+  creatorId   String
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  creator  User           @relation(fields: [creatorId], references: [id])
+  tasks    Task[]
+  sessions QuestSession[]
+
+  @@map("quests")
+}
+
+model Task {
+  id           String   @id @default(uuid())
+  questId      String
+  orderIndex   Int
+  description  String
+  answer       String
+  taskType     TaskType @default(TEXT)
+  hint         String?
+  latitude     Float
+  longitude    Float
+  createdAt    DateTime @default(now())
+
+  quest        Quest        @relation(fields: [questId], references: [id], onDelete: Cascade)
+  taskResults  TaskResult[]
+
+  @@map("tasks")
+}
+
+model QuestSession {
+  id              String        @id @default(uuid())
+  questId         String
+  userId          String
+  status          SessionStatus @default(ACTIVE)
+  currentTaskIndex Int          @default(0)
+  startedAt       DateTime      @default(now())
+  completedAt     DateTime?
+  totalTimeSeconds Int?
+
+  quest       Quest        @relation(fields: [questId], references: [id])
+  user        User         @relation(fields: [userId], references: [id])
+  taskResults TaskResult[]
+
+  @@map("quest_sessions")
+}
+
+model TaskResult {
+  id          String   @id @default(uuid())
+  sessionId   String
+  taskId      String
+  answer      String
+  isCorrect   Boolean
+  answeredAt  DateTime @default(now())
+
+  session QuestSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  task    Task         @relation(fields: [taskId], references: [id])
+
+  @@map("task_results")
+}

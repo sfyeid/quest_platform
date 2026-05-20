@@ -1,0 +1,78 @@
+# docker-compose.prod.yml
+# Для продакшн-деплоя на VPS / облачном сервере
+# Использование: docker compose -f docker-compose.prod.yml up -d --build
+
+version: '3.9'
+
+services:
+  postgres:
+    image: postgis/postgis:15-3.3
+    container_name: quest_db
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-quest_platform}
+      POSTGRES_USER: ${POSTGRES_USER:-quest_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-quest_pass}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-quest_user} -d ${POSTGRES_DB:-quest_platform}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - quest_network
+    restart: always
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: production
+    container_name: quest_backend
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-quest_user}:${POSTGRES_PASSWORD:-quest_pass}@postgres:5432/${POSTGRES_DB:-quest_platform}
+      JWT_SECRET: ${JWT_SECRET:-change_this_in_production_mandatory}
+      JWT_EXPIRES_IN: 7d
+      PORT: 4000
+      NODE_ENV: production
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - quest_network
+    restart: always
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: production
+      args:
+        VITE_API_URL: ${VITE_API_URL:-/api}
+        VITE_WS_URL: ${VITE_WS_URL:-}
+    container_name: quest_frontend
+    networks:
+      - quest_network
+    restart: always
+
+  nginx:
+    image: nginx:alpine
+    container_name: quest_nginx
+    ports:
+      - "${PORT:-80}:80"
+    volumes:
+      - ./nginx/nginx.prod.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - backend
+      - frontend
+    networks:
+      - quest_network
+    restart: always
+
+volumes:
+  postgres_data:
+
+networks:
+  quest_network:
+    driver: bridge
