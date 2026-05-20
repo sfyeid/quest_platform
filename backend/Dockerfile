@@ -9,8 +9,10 @@ RUN npx prisma generate
 EXPOSE 4000
 CMD ["npm", "run", "dev"]
 
-# ============ Production ============
+# ============ Production build ============
 FROM node:20-alpine AS build
+
+RUN apk add --no-cache openssl openssl-dev
 
 WORKDIR /app
 COPY package.json package-lock.json ./
@@ -18,11 +20,15 @@ RUN npm ci
 COPY . .
 RUN npx prisma generate && npm run build
 
+# ============ Production runtime ============
 FROM node:20-alpine AS production
+
+RUN apk add --no-cache openssl
 
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev
+
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=build /app/node_modules/@prisma ./node_modules/@prisma
